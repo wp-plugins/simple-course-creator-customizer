@@ -57,18 +57,24 @@ class SCC_Customizer {
 			) );
 			
 			// border pixels
-			$wp_customize->add_setting( 'scc_border_px', array( 'default' => '' ) );		
+			$wp_customize->add_setting( 'scc_border_px', array(
+				'default'			=> '',
+				'sanitize_callback'	=> array( $this, 'scc_customizer_sanitize_integer' ),
+			) );		
 			$wp_customize->add_control( 'scc_border_px', array(
-			    'label' 	=> __( 'Border Width', 'sdm' ),
+			    'label' 	=> __( 'Border Width', 'scc_customizer' ),
 			    'section' 	=> 'scc_customizer',
 				'settings' 	=> 'scc_border_px',
 				'priority'	=> 1
 			) );
 			
 			// border radius
-			$wp_customize->add_setting( 'scc_border_radius', array( 'default' => '' ) );		
+			$wp_customize->add_setting( 'scc_border_radius', array(
+				'default'			=> '',
+				'sanitize_callback'	=> array( $this, 'scc_customizer_sanitize_integer' ),
+			) );		
 			$wp_customize->add_control( 'scc_border_radius', array(
-			    'label' 	=> __( 'Border Radius', 'sdm' ),
+			    'label' 	=> __( 'Border Radius', 'scc_customizer' ),
 			    'section' 	=> 'scc_customizer',
 				'settings' 	=> 'scc_border_radius',
 				'priority'	=> 2
@@ -82,9 +88,12 @@ class SCC_Customizer {
 			);
 			
 			// padding in pixels
-			$wp_customize->add_setting( 'scc_padding_px', array( 'default' => '' ) );		
+			$wp_customize->add_setting( 'scc_padding_px', array(
+				'default'			=> '',
+				'sanitize_callback'	=> array( $this, 'scc_customizer_sanitize_integer' ),
+			) );		
 			$wp_customize->add_control( 'scc_padding_px', array(
-			    'label' 	=> __( 'Course Padding', 'sdm' ),
+			    'label' 	=> __( 'Course Padding', 'scc_customizer' ),
 			    'section' 	=> 'scc_customizer',
 				'settings' 	=> 'scc_padding_px',
 				'priority'	=> 4
@@ -125,7 +134,7 @@ class SCC_Customizer {
 				$wp_customize->add_setting( $color['slug'], array(
 					'default'		=> $color['default'],
 					'type'			=> 'option', 
-					'capability'	=>  'edit_theme_options'
+					'capability'	=> 'edit_theme_options'
 				) );
 		
 				// customizer controls
@@ -137,6 +146,35 @@ class SCC_Customizer {
 				) ) );
 			}
 		}
+	}
+
+
+	/**
+	 * sanitize integer input
+	 */
+	public function scc_customizer_sanitize_integer( $input ) {
+		if ( '' == $input ) :
+			return '';
+		endif;
+		
+		return absint( $input );
+	}
+
+
+	/**
+	 * sanitize hex colors
+	 */
+	public function scc_customizer_sanitize_hex_color( $color ) {
+		if ( '' === $color ) :
+			return '';
+	    endif;
+	
+		// 3 or 6 hex digits, or the empty string.
+		if ( preg_match('|^#([A-Fa-f0-9]{3}){1,2}$|', $color ) ) :
+			return $color;
+	    endif;
+	
+		return null;
 	}
 	
 	
@@ -162,73 +200,75 @@ class SCC_Customizer {
 	 * "hack" into the <style> tag output by this plugin.
 	 */
 	public function head_styles() {
-		$scc_border_px = get_theme_mod( 'scc_border_px' );
-		$scc_border_radius = get_theme_mod( 'scc_border_radius' );
-		$scc_border_color = get_option( 'scc_border_color' );
-		$scc_padding_px = get_theme_mod( 'scc_padding_px' );
-		$scc_bg_color = get_option( 'scc_background' );
-		$scc_text_color = get_option( 'scc_text_color' );
-		$scc_link_color = get_option( 'scc_link_color' );
-		$scc_link_hover_color = get_option( 'scc_link_hover_color' );
+		$scc_border_px			= get_theme_mod( 'scc_border_px' );
+		$scc_border_radius		= get_theme_mod( 'scc_border_radius' );
+		$scc_border_color		= get_option( 'scc_border_color' );
+		$scc_padding_px			= get_theme_mod( 'scc_padding_px' );
+		$scc_bg_color			= get_option( 'scc_background' );
+		$scc_text_color			= get_option( 'scc_text_color' );
+		$scc_link_color			= get_option( 'scc_link_color' );
+		$scc_link_hover_color	= get_option( 'scc_link_hover_color' );
 
 		echo '<style type="text/css">';
 			echo '#scc-wrap{';
 			
 				// course box border
-				if ( $scc_border_px == '0' && $scc_border_radius == '' ) :
-					echo "border:none;";
-				elseif ( $scc_border_px == '0' && $scc_border_radius != '' ) :
-					echo "border:none;border-radius:" . intval( $scc_border_radius ) . "px;";
+				if ( '0' == $scc_border_px && '' == $scc_border_radius ) :
+					echo 'border:none;';
+				elseif ( '0' == $scc_border_px && '' != $scc_border_radius ) :
+					echo 'border:none;border-radius:' . intval( $scc_border_radius ) . 'px;';
 				else : 
 			
 					// border width
-					if ( $scc_border_px != '' ) :
-						echo "border-width:" . intval( $scc_border_px ) . "px;";		
+					if ( '' != $scc_border_px && '0' != $scc_border_px ) :
+						echo 'border-width:' . intval( $scc_border_px ) . 'px;';
 					endif;
 			
 					// border radius
-					if ( $scc_border_radius != '' ) :
-						echo "border-radius:" . intval( $scc_border_radius ) . "px;";
+					if ( '' != $scc_border_radius ) :
+						echo 'border-radius:' . intval( $scc_border_radius ) . 'px;';
 					endif;
 				
 					// border color
-					if ( $scc_border_color != '' ) :
-						echo "border-color:{$scc_border_color};";		
+					if ( '' != $scc_border_color ) :
+						echo 'border-color:' . $this->scc_customizer_sanitize_hex_color( $scc_border_color ) . ';';		
 					endif;
 					
 					// border style
-					echo "border-style:solid;";
+					if ( '' != $scc_border_px && '0' != $scc_border_px ) :
+						echo 'border-style:solid;';
+					endif;
 				endif;
 			
 				// course box padding
-				if ( $scc_padding_px == '0' ) :
-					echo "padding:0;";
-				elseif ( $scc_padding_px == '' ) : 
+				if ( '0' == $scc_padding_px ) :
+					echo 'padding:0;';
+				elseif ( '' == $scc_padding_px ) : 
 					echo '';
 				else :
-					echo "padding:" . intval( $scc_padding_px ) . "px;";
+					echo 'padding:' . intval( $scc_padding_px ) . 'px;';
 				endif;
 					
 				// course box background color
 				if ( $scc_bg_color ) :
-					echo "background:{$scc_bg_color};";		
+					echo 'background:' . $this->scc_customizer_sanitize_hex_color( $scc_bg_color ) . ';';		
 				endif;
 				
 				// course box text color
 				if ( $scc_text_color ) :
-					echo "color:{$scc_text_color};";		
+					echo 'color:' . $this->scc_customizer_sanitize_hex_color( $scc_text_color ) . ';';		
 				endif;
 		
 			echo '}';
 				
 			// course box link color
 			if ( $scc_link_color ) :
-				echo "#scc-wrap a{color:{$scc_link_color};}";		
+				echo '#scc-wrap a{color:' . $this->scc_customizer_sanitize_hex_color( $scc_link_color ) . '}';		
 			endif;
 				
 			// course box link color
 			if ( $scc_link_hover_color ) :
-				echo "#scc-wrap a:hover{color:{$scc_link_hover_color};}";		
+				echo '#scc-wrap a:hover{color:' . $this->scc_customizer_sanitize_hex_color( $scc_link_hover_color ) . '}';		
 			endif;
 			
 			// hook into head CSS (for other SCC plugins to use when 
